@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "city-statistics": {
+      "enabled": true,
+      "type": "stdio",
+      "command": "/home/win10/deer-flow/backend/.venv/bin/python",
+      "args": [
+        "/home/win10/deer-flow/skills/custom/china-city-statistics/scripts/mcp_server.py"
+      ],
+      "env": {},
+      "tool_name_prefix": true,
+      "description": "城市统计数据SQLite入库工具"
+    }
+  },
+  "skills": {}
+}
