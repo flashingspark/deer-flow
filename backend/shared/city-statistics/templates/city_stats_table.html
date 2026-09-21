@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>城市统计数据库 · 全条目浏览（按指标类型分类）</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#161d2c; --panel2:#1c2436; --line:#2a3550;
+    --txt:#e8edf7; --muted:#95a3bd; --accent:#5aa9ff; --accent2:#3ddc97;
+    --metro:#5aa9ff; --pop:#f4a261; --gdp:#3ddc97; --fiscal:#c792ea; --other:#9aa5b1;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+       background:radial-gradient(1200px 600px at 15% -10%,#1b2740 0%,#0f1420 55%);color:var(--txt);padding:28px 20px 60px}
+  h1{font-size:24px;margin:0 0 6px;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:22px;line-height:1.7}
+  .stats{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+  .card{background:linear-gradient(180deg,#1a2233,#151c2b);border:1px solid var(--line);border-radius:12px;
+        padding:12px 18px;min-width:120px}
+  .card .n{font-size:22px;font-weight:700}
+  .card .l{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:.4px}
+  .filters{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:18px;
+           display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;align-items:end}
+  .f label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:.4px}
+  .f select,.f input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+                     border-radius:9px;padding:9px 11px;font-size:13px;outline:none}
+  .f select:focus,.f input:focus{border-color:var(--accent)}
+  .btn{background:var(--accent);border:none;color:#08121f;font-weight:700;border-radius:9px;padding:10px 16px;
+       font-size:13px;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:600}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .chip{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:999px;
+        padding:6px 14px;font-size:12px;cursor:pointer;transition:.15s}
+  .chip.on{color:#08121f;font-weight:700}
+  .chip.on[data-k="metro_length"]{background:var(--metro);border-color:var(--metro)}
+  .chip.on[data-k="population_resident"]{background:var(--pop);border-color:var(--pop)}
+  .chip.on[data-k="gdp_total"]{background:var(--gdp);border-color:var(--gdp)}
+  .chip.on[data-k="budget_revenue"]{background:var(--fiscal);border-color:var(--fiscal)}
+  .chip.on[data-k="__all"]{background:var(--accent);border-color:var(--accent)}
+  .chip.on[data-k="__other"]{background:var(--other);border-color:var(--other)}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:14px;overflow:hidden;
+        border:1px solid var(--line);font-size:13px}
+  thead th{background:#1a2233;color:var(--muted);text-align:left;padding:12px 12px;font-weight:600;font-size:12px;
+           letter-spacing:.3px;white-space:nowrap;border-bottom:1px solid var(--line)}
+  tbody td{padding:11px 12px;border-bottom:1px solid #202a3f;vertical-align:top}
+  tbody tr:hover{background:#1a2233}
+  tbody tr:last-child td{border-bottom:none}
+  .tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+  .tag.metro_length{background:rgba(90,169,255,.16);color:#8cc4ff;border:1px solid rgba(90,169,255,.4)}
+  .tag.population_resident{background:rgba(244,162,97,.16);color:#f7bb85;border:1px solid rgba(244,162,97,.4)}
+  .tag.gdp_total{background:rgba(61,220,151,.16);color:#68e6b0;border:1px solid rgba(61,220,151,.4)}
+  .tag.budget_revenue{background:rgba(199,146,234,.16);color:#d7acef;border:1px solid rgba(199,146,234,.4)}
+  .tag.other{background:rgba(154,165,177,.16);color:#b6bfcb;border:1px solid rgba(154,165,177,.4)}
+  .val{font-weight:700;font-variant-numeric:tabular-nums}
+  .src a{color:var(--accent);text-decoration:none;border-bottom:1px dotted rgba(90,169,255,.45)}
+  .src a:hover{border-bottom-style:solid}
+  .q{color:var(--muted);font-size:11.5px;line-height:1.5;max-width:320px}
+  .yr{font-variant-numeric:tabular-nums;color:#cbd6ea}
+  .grouphd td{background:#131a28;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:1px;padding:9px 12px}
+  .empty{padding:40px;text-align:center;color:var(--muted)}
+  .note{margin-top:16px;color:var(--muted);font-size:12px;line-height:1.8;border-left:3px solid var(--line);padding-left:14px}
+  .flag{display:inline-block;margin-left:6px;font-size:10px;padding:1px 6px;border-radius:4px;
+        background:rgba(244,162,97,.18);color:#f7bb85;border:1px solid rgba(244,162,97,.35)}
+</style>
+</head>
+<body>
+  <h1>城市统计数据库 · 全条目浏览</h1>
+  <div class="sub">
+    数据源：china-city-statistics SQLite 数据库（<code>city_statistics.db</code>）· 共 <b id="totalN">20</b> 条记录<br>
+    按指标类型（indicator_code）自动分类；地铁运营里程、常住人口为本次新增，其余为历史条目。
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="filters">
+    <div class="f"><label>城市</label><select id="fCity"><option value="">全部城市</option></select></div>
+    <div class="f"><label>年份</label><select id="fYear"><option value="">全部年份</option></select></div>
+    <div class="f"><label>指标类型</label><select id="fInd"><option value="">全部指标</option></select></div>
+    <div class="f"><label>口径 / 部门</label><select id="fDim"><option value="">全部领域</option></select></div>
+    <div class="f"><label>关键词（城市/来源/摘录）</label><input id="fKw" placeholder="如：深圳、统计公报、634.5"></div>
+    <div class="f" style="display:flex;gap:8px">
+      <button class="btn" id="btnTop">只看地铁里程 & 人口</button>
+      <button class="btn ghost" id="btnReset">重置</button>
+    </div>
+  </div>
+
+  <div class="chips" id="chips"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>城市</th><th>年份</th><th>指标</th><th>数值</th><th>单位</th>
+        <th>统计口径 / 时点</th><th>来源</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div id="empty" class="empty" style="display:none">没有符合筛选条件的记录。</div>
+
+  <div class="note">
+    <b>口径提示：</b><br>
+    · <b>地铁运营里程</b>：深圳含地铁及有轨电车（595.1→634.5 km）；南京为城市轨道交通运营里程（484→524.43 km）；北京为城市轨道交通口径（不含市郊铁路）；上海为轨道交通全网络口径（含市域机场线）。各市边界界定不一致，横向直接比较需谨慎。<br>
+    · 南京 2025 年数值（524.43 km）由交通运输部 11 月运营里程 507.8 km 叠加新开通线路长度推算，value_origin=calculated。<br>
+    · <b>常住人口</b>：均为年末常住人口，口径一致。<br>
+    · 标记 <span class="flag">口径/时点待补</span> 的历史条目（如 id=3）缺少 scope/time_point 字段。
+  </div>
+
+<script>
+const ROWS = [
+ {"id":11,"city_name":"上海市","year":2025,"indicator_code":"metro_length","indicator_name":"地铁运营里程","dimension":"公共资源与基础设施","value":906.0,"unit":"公里","scope":"上海市行政区域内轨道交通全网络运营里程（含地铁市区线及市域机场线）；截至2025年12月27日18号线二期开通后","time_point":"年末","source_name":"上海地铁18号线二期开通相关报道","source_url":"https://www.ditiee.com/thread-1571-1-1.html","source_quote":"上海轨道交通全网运营线路共计21条，运营总里程达906公里，运营车站为523座。"},
+ {"id":10,"city_name":"北京市","year":2025,"indicator_code":"metro_length","indicator_name":"地铁运营里程","dimension":"公共资源与基础设施","value":909.0,"unit":"公里","scope":"北京市行政区域内城市轨道交通（地铁）全路网；不含市郊铁路；截至2025年底","time_point":"年末","source_name":"新京报（北京市交通委员会发布）","source_url":"https://m.bjnews.com.cn/detail/1763632283129111.html","source_quote":"轨道交通将新增运营里程30公里，运营里程由“十三五”末的727公里增长至“十四五”末的909公里。"},
+ {"id":19,"city_name":"南京市","year":2025,"indicator_code":"metro_length","indicator_name":"地铁运营里程","dimension":"公共资源与基础设施","value":524.43,"unit":"公里","scope":"南京市城市轨道交通运营里程，2025年12月19日3号线三期、10号线二期开通后","time_point":"年末","source_name":"天风财经（引交通运输部数据+新线长度）","source_url":"https://www.tfcaijing.com/touch/article/page/5769506f696e754949506773307861777173574a32413d3d","source_quote":"叠加此次新开通两条线路的长度后，南京轨道交通运营里程为524.43公里。"},
+ {"id":21,"city_name":"南京市","year":2025,"indicator_code":"population_resident","indicator_name":"常住人口","dimension":"人口与社会结构","value":963.85,"unit":"万人","scope":"南京市行政区域年末常住人口","time_point":"年末","source_name":"时代周报/天风财经","source_url":"https://time-weekly.com/post/328950","source_quote":"2025年，南京GDP为1.94万亿元，常住人口963.85万人。"},
+ {"id":15,"city_name":"深圳市","year":2025,"indicator_code":"metro_length","indicator_name":"地铁运营里程","dimension":"公共资源与基础设施","value":634.5,"unit":"公里","scope":"深圳市城市轨道交通（含地铁及有轨电车）运营总里程，2025年底新线开通后","time_point":"年末","source_name":"深圳特区报/21财经","source_url":"https://m.21jingji.com/article/20260104/herald/bc681b3da74b2f02f955222f3e3586de.html","source_quote":"深圳轨道交通运营里程增至634.5公里，车站达441座，实现全市各区轨道交通全覆盖。"},
+ {"id":17,"city_name":"深圳市","year":2025,"indicator_code":"population_resident","indicator_name":"常住人口","dimension":"人口与社会结构","value":1824.85,"unit":"万人","scope":"深圳市行政区域（含各区，全域设区）年末常住人口","time_point":"年末","source_name":"深圳市2025年国民经济和社会发展统计公报","source_url":"https://tjj.sz.gov.cn/zwgk/zfxxgkml/tjsj/tjgb/content/post_12803919.html","source_quote":"2025年末全市常住人口达1824.85万人，首次突破1800万人，比上年末增加25.90万人。"},
+ {"id":9,"city_name":"上海市","year":2024,"indicator_code":"budget_revenue","indicator_name":"一般公共预算收入","dimension":"财政与收入","value":8374.17,"unit":"亿元","scope":"全市；地方一般公共预算收入；2024年统计公报发布值","time_point":"全年","source_name":"上海市统计局《2024年国民经济和社会发展统计公报》","source_url":"https://tjj.sh.gov.cn/tjgb/20250324/a7fe18c6d5c24d66bfca89c5bb4cdcfb.html","source_quote":"全年地方一般公共预算收入8374.17亿元"},
+ {"id":8,"city_name":"上海市","year":2024,"indicator_code":"gdp_total","indicator_name":"地区生产总值","dimension":"经济发展","value":53926.71,"unit":"亿元","scope":"全市；现价；2024年统计公报初步核算数","time_point":"全年","source_name":"上海市统计局《2024年国民经济和社会发展统计公报》","source_url":"https://tjj.sh.gov.cn/tjgb/20250324/a7fe18c6d5c24d66bfca89c5bb4cdcfb.html","source_quote":"初步核算，全年实现地区生产总值（GDP）53926.71亿元"},
+ {"id":13,"city_name":"上海市","year":2024,"indicator_code":"metro_length","indicator_name":"地铁运营里程","dimension":"公共资源与基础设施","value":896.0,"unit":"公里","scope":"上海市行政区域内轨道交通全网络运营里程（含地铁市区线及市域机场线）；截至2024年12月27日市域机场线开通后","time_point":"年末","source_name":"上海申通地铁集团发布信息（东方网等转载）","source_url":"https://j.021east.com/m/1735109031043525","source_quote":"上海轨道交通全网络运营里程将增至896公里，运营线路达21条，车站517座。"},
+ {"id":7,"city_name":"上海市","year":2024,"indicator_code":"population_resident","indicator_name":"常住人口","dimension":"人口与社会结构","value":2480.26,"unit":"万人","scope":"全市；年末常住人口","time_point":"年末","source_name":"上海市统计局《2024年国民经济和社会发展统计公报》","source_url":"https://tjj.sh.gov.cn/tjgb/20250324/a7fe18c6d5c24d66bfca89c5bb4cdcfb.html","source_quote":"至年末，全市常住人口为2480.26万人"},
+ {"id":3,"city_name":"北京","year":2024,"indicator_code":"地区生产总值","indicator_name":"地区生产总值","dimension":"经济发展","value":49843.1,"unit":"亿元","scope":null,"time_point":null,"source_name":"用户提供","source_url":"https://tjj.beijing.gov.cn/tjsj_31433/tjgb_31445/ndgb_31446/202503/t20250319_4038820.html","source_quote":"北京；2024；地区生产总值；49843.1；亿元"},
+ {"id":6,"city_name":"北京市","year":2024,"indicator_code":"budget_revenue","indicator_name":"一般公共预算收入","dimension":"财政与收入","value":6372.7,"unit":"亿元","scope":"全市；地方一般公共预算收入；2024年统计公报发布值","time_point":"全年","source_name":"北京市统计局《北京市2024年国民经济和社会发展统计公报》","source_url":"https://tjj.beijing.gov.cn/tjsj_31433/sjjd_31444/202503/t20250319_4038768.html","source_quote":"全年完成一般公共预算收入6372.7亿元"},
+ {"id":2,"city_name":"北京市","year":2024,"indicator_code":"gdp_total","indicator_name":"地区生产总值","dimension":"经济发展","value":49843.1,"unit":"亿元","scope":"全市","time_point":"全年","source_name":"北京市2024年统计公报","source_url":"https://example.com/beijing-2024","source_quote":"全年实现地区生产总值49843.1亿元"},
+ {"id":5,"city_name":"北京市","year":2024,"indicator_code":"gdp_total","indicator_name":"地区生产总值","dimension":"经济发展","value":49843.1,"unit":"亿元","scope":"全市；现价；2024年统计公报初步核算数","time_point":"全年","source_name":"北京市统计局《北京市2024年国民经济和社会发展统计公报》","source_url":"https://tjj.beijing.gov.cn/tjsj_31433/sjjd_31444/202503/t20250319_4038768.html","source_quote":"初步核算，全年实现地区生产总值49843.1亿元"},
+ {"id":12,"city_name":"北京市","year":2024,"indicator_code":"metro_length","indicator_name":"地铁运营里程","dimension":"公共资源与基础设施","value":879.0,"unit":"公里","scope":"北京市行政区域内城市轨道交通（地铁）全路网；不含市郊铁路；截至2024年12月15日3条新线开通后","time_point":"年末","source_name":"北京市交通委员会发布信息（新华社/大众网等转载）","source_url":"https://www.dzwww.com/xinwen/guoneixinwen/202412/t20241215_15253516.htm","source_quote":"北京城市轨道交通运营总里程达到879公里，长度居全国首位。车站522座，其中换乘站98座。"},
+ {"id":4,"city_name":"北京市","year":2024,"indicator_code":"population_resident","indicator_name":"常住人口","dimension":"人口与社会结构","value":2183.2,"unit":"万人","scope":"全市；年末常住人口","time_point":"年末","source_name":"北京市统计局《北京市2024年国民经济和社会发展统计公报》","source_url":"https://tjj.beijing.gov.cn/tjsj_31433/sjjd_31444/202503/t20250319_4038768.html","source_quote":"年末全市常住人口2183.2万人"},
+ {"id":18,"city_name":"南京市","year":2024,"indicator_code":"metro_length","indicator_name":"地铁运营里程","dimension":"公共资源与基础设施","value":484.0,"unit":"公里","scope":"南京市城市轨道交通运营里程，2024年12月28日地铁7号线全线贯通后","time_point":"年末","source_name":"中国江苏网/扬子晚报（引南京地铁）","source_url":"https://jsnews.jschina.com.cn/hxms/202412/t20241228_s67b321d7e4b0403ba658dc30.shtml","source_quote":"南京地铁13条已开通线路的运营里程将由近473公里增加至近484公里，车站总数由226座增加至234座。"},
+ {"id":20,"city_name":"南京市","year":2024,"indicator_code":"population_resident","indicator_name":"常住人口","dimension":"人口与社会结构","value":957.7,"unit":"万人","scope":"南京市行政区域年末常住人口","time_point":"年末","source_name":"南京市统计局","source_url":"https://tjj.nanjing.gov.cn/","source_quote":"2024年末南京全市常住人口957.7万人，比上年末增加3.0万人，增长0.31%。"},
+ {"id":14,"city_name":"深圳市","year":2024,"indicator_code":"metro_length","indicator_name":"地铁运营里程","dimension":"公共资源与基础设施","value":595.1,"unit":"公里","scope":"深圳市城市轨道交通（含地铁及有轨电车）运营总里程，2024年12月28日5条新线（段）开通后","time_point":"年末","source_name":"羊城晚报（引深圳地铁）","source_url":"https://ep.ycwb.com/epaper/ycwb/html/2024-12/29/content_2_683720.htm","source_quote":"深圳城市轨道交通运营线路达到18条（含有轨电车），运营总里程595.1公里，车站417座。"},
+ {"id":16,"city_name":"深圳市","year":2024,"indicator_code":"population_resident","indicator_name":"常住人口","dimension":"人口与社会结构","value":1798.95,"unit":"万人","scope":"深圳市行政区域（含各区，全域设区）年末常住人口","time_point":"年末","source_name":"深圳市统计局","source_url":"https://tjj.sz.gov.cn/zwgk/zfxxgkml/tjsj/tjgb/","source_quote":"2024年末全市常住人口1798.95万人。"},
+ {"id":22,"city_name":"深圳市","year":2023,"indicator_code":"metro_length","indicator_name":"地铁运营里程","dimension":"公共资源与基础设施","value":567.1,"unit":"公里","scope":"深圳市辖区（全市9个市辖区，含地铁4号线及有轨电车）","time_point":"年末","source_name":"深圳市人民政府国有资产监督管理委员会《深铁集团交出2023年运营答卷》","source_url":"https://gzw.sz.gov.cn/zwgk/qt/pcgz/content/post_11122073.html","source_quote":"截至2023年12月31日，深圳市城市轨道交通线网规模（含4号线及有轨电车，下同）567.1公里，全年累计运送乘客27.11亿人次"},
+ {"id":23,"city_name":"深圳市","year":2023,"indicator_code":"metro_length","indicator_name":"地铁运营里程","dimension":"公共资源与基础设施","value":547.4,"unit":"公里","scope":"深圳市辖区（全市9个市辖区，纯地铁线路，不含4号线及有轨电车）","time_point":"年末","source_name":"国务院国有资产监督管理委员会《25年铺就559.1公里线路！深铁集团助力打造交通强国城市范例》","source_url":"http://wap.sasac.gov.cn/n2588025/n2588129/c28536654/content.html","source_quote":"深圳城市轨道交通线网规模达到17条（含有轨电车及港铁深圳4号线），运营总里程559.1公里（地铁运营里程547.4公里，有轨电车11.7公里）"},
+ {"id":24,"city_name":"青岛市","year":2023,"indicator_code":"metro_length","indicator_name":"地铁运营里程","dimension":"公共资源与基础设施","value":318.0,"unit":"公里","scope":"青岛市辖区（青岛市地铁集团运营线路）","time_point":"年末","source_name":"青岛地铁集团《2023年度青岛地铁运营服务责任报告》","source_url":"https://www.qd-metro.com/","source_quote":"截至2023年底，青岛地铁运营7条线路、318公里、150座车站"},
+ {"id":25,"city_name":"青岛市","year":2023,"indicator_code":"primary_industry_value","indicator_name":"第一产业增加值","dimension":"经济发展","value":492.75,"unit":"亿元","scope":"青岛市全市（载体指标；本条同时记录全市粮食产量318.6万吨，含胶州、平度、莱西等县级市）","time_point":"全年","source_name":"2023年青岛市经济运行情况（商务部青岛站点转载市级统一核算结果）","source_url":"https://cif.mofcom.gov.cn/newsite/html/qingdao/html/871002/2024/1/31/1706690260073.html","source_quote":"2023年全年青岛市生产总值15760.34亿元…第一产业增加值492.75亿元，比上年增长4.1%。粮食产量：全年粮食总产量318.6万吨，比上年增长2.4%"},
+ {"id":26,"city_name":"深圳市","year":2023,"indicator_code":"primary_industry_value","indicator_name":"第一产业增加值","dimension":"经济发展","value":null,"unit":"亿元","value_text":"粮食产量：暂无（官方公报未单列粮食产量；仅蔬菜16.68万吨、水果4.10万吨）","scope":"深圳市辖区（全市9个市辖区）；官方公报未单列粮食产量","time_point":"全年","status":"missing","source_name":"深圳市2023年国民经济和社会发展统计公报","source_url":"https://tjj.sz.gov.cn/gkmlpt/content/11/11264/post_11264245.html","source_quote":"全年蔬菜产量16.68万吨…水果产量4.10万吨。（公报未披露粮食产量数据）"}
+];
+
+const META = {
+  metro_length:       {label:"地铁运营里程", cls:"metro_length"},
+  population_resident:{label:"常住人口数量", cls:"population_resident"},
+  gdp_total:          {label:"地区生产总值", cls:"gdp_total"},
+  budget_revenue:     {label:"一般公共预算收入", cls:"budget_revenue"},
+  primary_industry_value:{label:"第一产业增加值（承载粮食产量）", cls:"gdp_total"},
+};
+const clsOf = k => META[k] ? META[k].cls : "other";
+const nameOf = k => META[k] ? META[k].label : (k || "其他指标");
+
+/* ---- stats cards ---- */
+const byInd = {};
+ROWS.forEach(r => byInd[r.indicator_code] = (byInd[r.indicator_code]||0)+1);
+const statsEl = document.getElementById('stats');
+let html = `<div class="card"><div class="n">${ROWS.length}</div><div class="l">总记录数</div></div>`;
+Object.entries(byInd).sort((a,b)=>b[1]-a[1]).forEach(([k,n])=>{
+  html += `<div class="card"><div class="n" style="color:var(--${clsOf(k)==='other'?'other':clsOf(k)})">${n}</div>
+           <div class="l">${nameOf(k)}</div></div>`;
+});
+statsEl.innerHTML = html;
+
+/* ---- populate selects ---- */
+const uniq = key => [...new Set(ROWS.map(r=>r[key]).filter(v=>v!==null&&v!==undefined&&v!==''))].sort();
+const fCity=document.getElementById('fCity'), fYear=document.getElementById('fYear'),
+      fInd=document.getElementById('fInd'), fDim=document.getElementById('fDim'), fKw=document.getElementById('fKw');
+uniq('city_name').forEach(v=>fCity.insertAdjacentHTML('beforeend',`<option>${v}</option>`));
+uniq('year').forEach(v=>fYear.insertAdjacentHTML('beforeend',`<option>${v}</option>`));
+uniq('indicator_code').forEach(v=>fInd.insertAdjacentHTML('beforeend',`<option value="${v}">${nameOf(v)}</option>`));
+uniq('dimension').forEach(v=>fDim.insertAdjacentHTML('beforeend',`<option>${v}</option>`));
+
+/* ---- chips ---- */
+const chipsEl = document.getElementById('chips');
+const CHIPS = [['__all','全部'],['metro_length','地铁运营里程'],['population_resident','常住人口数量'],
+               ['gdp_total','地区生产总值'],['budget_revenue','一般公共预算收入'],['__other','其他']];
+let activeChip = '__all';
+CHIPS.forEach(([k,label])=>{
+  const el=document.createElement('div');
+  el.className='chip'+(k==='__all'?' on':''); el.dataset.k=k; el.textContent=label;
+  el.onclick=()=>{activeChip=k;[...chipsEl.children].forEach(c=>c.classList.toggle('on',c===el));
+                  fInd.value='';render();};
+  chipsEl.appendChild(el);
+});
+
+/* ---- render ---- */
+function render(){
+  const city=fCity.value, year=fYear.value, ind=fInd.value, dim=fDim.value, kw=fKw.value.trim().toLowerCase();
+  let rows = ROWS.filter(r=>{
+    if(city && r.city_name!==city) return false;
+    if(year && String(r.year)!==year) return false;
+    if(dim && r.dimension!==dim) return false;
+    if(ind && r.indicator_code!==ind) return false;
+    if(activeChip==='__other'){ if(META[r.indicator_code]) return false; }
+    else if(activeChip!=='__all' && r.indicator_code!==activeChip) return false;
+    if(kw){
+      const hay=[r.city_name,r.indicator_name,r.source_name,r.source_quote,r.value,r.scope].join(' ').toLowerCase();
+      if(!hay.includes(kw)) return false;
+    }
+    return true;
+  });
+  // 分组：按指标类型
+  rows.sort((a,b)=>{
+    const ka=a.indicator_code, kb=b.indicator_code;
+    if(ka!==kb) return ka.localeCompare(kb);
+    if(a.city_name!==b.city_name) return a.city_name.localeCompare(b.city_name,'zh');
+    return a.year-b.year;
+  });
+  const tb=document.getElementById('tbody'); tb.innerHTML='';
+  let last=null;
+  rows.forEach(r=>{
+    if(r.indicator_code!==last){
+      last=r.indicator_code;
+      const n=rows.filter(x=>x.indicator_code===last).length;
+      tb.insertAdjacentHTML('beforeend',
+        `<tr class="grouphd"><td colspan="8">${nameOf(last)} · ${n} 条</td></tr>`);
+    }
+    const cls=clsOf(r.indicator_code);
+    const vt = (r.time_point? r.time_point : '<span class="flag">时点待补</span>');
+    tb.insertAdjacentHTML('beforeend',`
+      <tr>
+        <td class="yr">${r.id}</td>
+        <td><b>${r.city_name}</b></td>
+        <td class="yr">${r.year}</td>
+        <td><span class="tag ${cls}">${r.indicator_name}</span></td>
+        <td class="val">${r.value}</td>
+        <td>${r.unit||''}</td>
+        <td class="q">${r.scope||'—'}<br><span style="opacity:.75">时点：${vt}</span></td>
+        <td class="src"><a href="${r.source_url}" target="_blank" rel="noopener">${r.source_name||r.source_url}</a></td>
+      </tr>`);
+  });
+  document.getElementById('empty').style.display = rows.length? 'none':'block';
+}
+
+/* ---- events ---- */
+[fCity,fYear,fInd,fDim].forEach(el=>el.onchange=()=>{
+  if(el===fInd && fInd.value){ activeChip='__all'; [...chipsEl.children].forEach(c=>c.classList.toggle('on',c.dataset.k==='__all')); }
+  render();
+});
+fKw.oninput=render;
+document.getElementById('btnReset').onclick=()=>{
+  fCity.value='';fYear.value='';fInd.value='';fDim.value='';fKw.value='';
+  activeChip='__all';[...chipsEl.children].forEach(c=>c.classList.toggle('on',c.dataset.k==='__all'));
+  render();
+};
+document.getElementById('btnTop').onclick=()=>{
+  activeChip='__all';[...chipsEl.children].forEach(c=>c.classList.toggle('on',c.dataset.k==='__all'));
+  fCity.value='';fYear.value='';fDim.value='';fKw.value='';
+  fInd.value='metro_length'; render();
+  fInd.value=''; // keep dropdown clean but filter both via kw-free custom:
+  window.__dualMode=true;
+  const rows=ROWS.filter(r=>['metro_length','population_resident'].includes(r.indicator_code));
+  drawCustom(rows,'地铁运营里程 & 常住人口数量');
+};
+function drawCustom(rows,title){
+  const tb=document.getElementById('tbody'); tb.innerHTML='';
+  tb.insertAdjacentHTML('beforeend',`<tr class="grouphd"><td colspan="8">${title} · ${rows.length} 条</td></tr>`);
+  rows.sort((a,b)=> a.indicator_code!==b.indicator_code ? a.indicator_code.localeCompare(b.indicator_code)
+                : (a.city_name!==b.city_name ? a.city_name.localeCompare(b.city_name,'zh') : a.year-b.year));
+  rows.forEach(r=>{
+    const cls=clsOf(r.indicator_code);
+    tb.insertAdjacentHTML('beforeend',`
+      <tr>
+        <td class="yr">${r.id}</td><td><b>${r.city_name}</b></td><td class="yr">${r.year}</td>
+        <td><span class="tag ${cls}">${r.indicator_name}</span></td>
+        <td class="val">${r.value}</td><td>${r.unit||''}</td>
+        <td class="q">${r.scope||'—'}</td>
+        <td class="src"><a href="${r.source_url}" target="_blank" rel="noopener">${r.source_name||r.source_url}</a></td>
+      </tr>`);
+  });
+  document.getElementById('empty').style.display = rows.length? 'none':'block';
+}
+
+render();
+</script>
+</body>
+</html>
